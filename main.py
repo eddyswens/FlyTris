@@ -224,13 +224,23 @@ def check_lost(positions):
         x, y = pos
         if y < 1:
             return True
-    return False
+    return False 
 
 
 def get_shape():
     global shapes, shape_colors
 
-    return Piece(5, 1, random.choice(shapes))
+    shape_from_heap = Piece(5, 1, random.choice(shapes))
+    i = shapes.index(shape_from_heap.shape)
+
+    shapes.pop(i)
+    shape_colors.pop(i)
+    
+    if len(shapes) == 0:
+        shapes = [S, Z, I, O, J, L, T]
+        shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+
+    return shape_from_heap
 
 
 def draw_text_middle(text, size, color, surface):
@@ -331,7 +341,7 @@ def main():
 
     locked_positions = {}  # (x,y):(255,0,0)
     grid = create_grid(locked_positions)
-
+    
     change_piece = False
     run = True
     current_piece = get_shape()
@@ -452,7 +462,7 @@ def main():
                     
                 # Стрелка вверх - нажатие 
                 if event.key == pygame.K_UP:
-                    # rotate shape
+                    # Вращать фигуру
                     current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
                     if not valid_space(current_piece, grid):
                         current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
