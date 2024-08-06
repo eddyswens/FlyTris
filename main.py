@@ -440,6 +440,16 @@ def main():
                     if not valid_space(current_piece, grid):
                         current_piece.x -= 1
 
+                # Пробел - нажатие 
+                elif event.key == pygame.K_SPACE:
+                    hard_drop = True
+                    while hard_drop:
+                        current_piece.y += 1
+                        if not (valid_space(current_piece, grid)) and current_piece.y > 0:
+                            current_piece.y -= 1
+                            change_piece = True
+                            hard_drop = False
+                    
                 # Стрелка вверх - нажатие 
                 if event.key == pygame.K_UP:
                     # rotate shape
