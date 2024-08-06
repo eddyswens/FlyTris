@@ -277,13 +277,26 @@ def clear_rows(grid, locked):
     
     return inc
 
+def draw_stats(scr, lvl, surface):
+    font = pygame.font.SysFont('comicsans', 30)
+    score_label = font.render(f"Score: {scr}", 1, (255, 255, 255))
+    level_label = font.render(f"Level: {lvl}", 1, (255, 255, 255))
+
+    sx = top_left_x + play_width + 50
+    sy1 = top_left_y + play_height / 2
+    sy2 = sy1 + 100
+
+    surface.blit(score_label, (sx, sy1))
+    surface.blit(level_label, (sx, sy2))
+
+
 
 def draw_next_shape(shape, surface):
     font = pygame.font.SysFont('comicsans', 30)
     label = font.render('Next Shape', 1, (255, 255, 255))
 
     sx = top_left_x + play_width + 50
-    sy = top_left_y + play_height / 2 - 100
+    sy = top_left_y + play_height / 2 - 200
     format = shape.shape[shape.rotation % len(shape.shape)]
 
     for i, line in enumerate(format):
@@ -509,6 +522,7 @@ def main():
 
         draw_window(win)
         draw_next_shape(next_piece, win)
+        draw_stats(score, current_level, win)
         pygame.display.update()
 
         # Проверка на проигрыш
@@ -535,7 +549,7 @@ def main_menu():
 
             if event.type == pygame.KEYDOWN:
                 main()
-                
+
     pygame.quit()
 
 
