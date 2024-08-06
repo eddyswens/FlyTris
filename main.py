@@ -17,10 +17,36 @@ play_width = 300  # meaning 300 // 10 = 30 width per block
 play_height = 600  # meaning 600 // 20 = 20 height per blo ck
 block_size = 30
 
+fall_speeds = { 0: 48, 
+                1: 43,
+                2: 38,
+                3: 33,
+                4: 28,
+                5: 23,
+                6: 18,
+                7: 13,
+                8: 8,
+                9: 6,
+                10: 5,
+                11: 5,
+                12: 5,
+                13: 4,
+                14: 4,
+                15: 4,
+                16: 3,
+                17: 3,
+                18: 3   }
+
+scores_from_num_of_lines = {1: 40,
+                            2: 100,
+                            3: 300,
+                            4: 1200 }
+
 # Скорость выражается в тиках на одну клетку (60 тиков в секунду +-2 тика)
 FPS = 60
-# SPEED = 100
-FALL_SPEED = 48 # in ticks
+
+START_LEVEL = 0
+FALL_SPEED = fall_speeds[START_LEVEL] # in ticks
 ARR = 2 # in ticks
 DAS = 10 # in ticks
 SOFT_DROP_SPEED = 2 # in ticks
@@ -150,6 +176,7 @@ class Piece(object):
         self.color = shape_colors[shapes.index(shape)]
         self.rotation = 0  # number from 0-3
         self.is_moving = False
+        self.is_soft_dropping = False
 
 
 def create_grid(locked_positions={}):
@@ -203,7 +230,7 @@ def check_lost(positions):
 def get_shape():
     global shapes, shape_colors
 
-    return Piece(5, 0, random.choice(shapes))
+    return Piece(5, 1, random.choice(shapes))
 
 
 def draw_text_middle(text, size, color, surface):
@@ -240,13 +267,15 @@ def clear_rows(grid, locked):
                     del locked[(j, i)]
                 except:
                     continue
+
     if inc > 0:
         for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
             x, y = key
             if y < ind:
                 newKey = (x, y + inc)
                 locked[newKey] = locked.pop(key)
-        return True
+    
+    return inc
 
 
 def draw_next_shape(shape, surface):
@@ -306,6 +335,8 @@ def main():
     soft_drop_allowed = True
     is_das_delay = False
     is_moving_allowed = True
+    lines_cleared = 0
+    current_level = 0
     
 
     while run:
@@ -322,12 +353,8 @@ def main():
 
         clock.tick_busy_loop(FPS)
         ticks += 1
-        fall_timer += 1
-            
-        print(ticks)
-        print(level_time)
 
-
+        # Таймер при активации Soft Drop
         if not soft_drop_allowed:
             if soft_drop_timer >= SOFT_DROP_SPEED:
                 soft_drop_timer = 0
@@ -346,19 +373,22 @@ def main():
 
         # Таймер при активации ARR
         if not is_moving_allowed:
-            if mov_timer > ARR:
+            if mov_timer >= ARR:
                 mov_timer = 0
                 is_moving_allowed = True
             else:
                 mov_timer += 1
 
         # Падение фигуры
-        if fall_timer >= FALL_SPEED:
-            fall_timer = 0
-            current_piece.y += 1
-            if not (valid_space(current_piece, grid)) and current_piece.y > 0:
-                current_piece.y -= 1
-                change_piece = True
+        if not current_piece.is_soft_dropping:
+            if fall_timer >= FALL_SPEED:
+                fall_timer = 0
+                current_piece.y += 1
+                if not (valid_space(current_piece, grid)) and current_piece.y > 0:
+                    current_piece.y -= 1
+                    change_piece = True
+            else:
+                fall_timer += 1
 
 
         # Обработка произошедших за тик событий
@@ -421,11 +451,15 @@ def main():
         # --------------------------!!!--------------------------
 
         # Ускоренное движение вниз при удержании
-        if(pressed_keys[pygame.K_DOWN]) and soft_drop_allowed:
-            current_piece.y += 1
-            soft_drop_allowed = False
-            if not valid_space(current_piece, grid):
-                current_piece.y -= 1
+        if soft_drop_allowed:
+            if(pressed_keys[pygame.K_DOWN]) :
+                current_piece.is_soft_dropping = True
+                current_piece.y += 1
+                soft_drop_allowed = False
+                if not valid_space(current_piece, grid):
+                    current_piece.y -= 1
+            else:
+                current_piece.is_soft_dropping = False
 
         # Условие движения фигуры при удержании вправо/влево
         allow_move_while_pressed = current_piece.is_moving and not is_das_delay and is_moving_allowed and current_piece.y > 1        
@@ -464,17 +498,20 @@ def main():
             next_piece = get_shape()
             change_piece = False
 
-            # Проверка на необходимость очищения строки и добавление очков
-            if clear_rows(grid, locked_positions):
-                score += 10
+            # Проверка на необходимость очищения строки и добавление очков и уровня
+            current_lines_out = clear_rows(grid, locked_positions)
+            lines_cleared += current_lines_out
+            if current_lines_out:
+                score += scores_from_num_of_lines[current_lines_out] * (current_level + 1)
+                current_level = lines_cleared // 10
                 print(f"Score is {score}")
-                
+                print(f"Level is {current_level}")
 
         draw_window(win)
         draw_next_shape(next_piece, win)
         pygame.display.update()
 
-        # Check if user lost
+        # Проверка на проигрыш
         if check_lost(locked_positions):
             run = False
 
@@ -486,15 +523,19 @@ def main():
 def main_menu():
     run = True
     while run:
+
         win.fill((0, 0, 0))
         draw_text_middle('Press any key to begin.', 60, (255, 255, 255), win)
         pygame.display.update()
+
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 run = False
 
             if event.type == pygame.KEYDOWN:
                 main()
+                
     pygame.quit()
 
 
