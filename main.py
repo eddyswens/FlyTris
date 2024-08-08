@@ -261,30 +261,36 @@ def draw_grid(surface, row, col):
             pygame.draw.line(surface, (128, 128, 128), (sx + j * 30, sy),
                              (sx + j * 30, sy + play_height))  # vertical lines
 
-
 def clear_rows(grid, locked):
-    # need to see if row is clear the shift every other row above down one
-
     inc = 0
+    cleared_rows = []
+
+    # Проход по строкам сетки в обратном порядке (снизу вверх)
     for i in range(len(grid) - 1, -1, -1):
         row = grid[i]
         if (0, 0, 0) not in row:
             inc += 1
-            # add positions to remove from locked
-            ind = i
+            cleared_rows.append(i)
+            # Удаление позиций из locked
             for j in range(len(row)):
                 try:
                     del locked[(j, i)]
                 except:
                     continue
 
+    # Сдвиг строк вниз
     if inc > 0:
-        for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
-            x, y = key
-            if y < ind:
-                newKey = (x, y + inc)
-                locked[newKey] = locked.pop(key)
-    
+        # Проход по всем заблокированным позициям в порядке их y-координаты (сверху вниз)
+        for i in range(len(grid) - 1, -1, -1):
+            if i in cleared_rows:
+                continue
+            # Количество очищенных строк ниже текущей позиции
+            shift = sum(1 for row in cleared_rows if row > i)
+            if shift > 0:
+                for j in range(len(grid[i])):
+                    if (j, i) in locked:
+                        locked[(j, i + shift)] = locked.pop((j, i))
+
     return inc
 
 def draw_stats(scr, lvl, surface):
