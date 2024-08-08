@@ -10,13 +10,6 @@ represented in order by 0 - 6
 
 pygame.font.init()
 
-# GLOBALS VARS
-s_width = 800
-s_height = 700
-play_width = 300  # meaning 300 // 10 = 30 width per block
-play_height = 600  # meaning 600 // 20 = 20 height per blo ck
-block_size = 30
-
 fall_speeds = { 0: 48, 
                 1: 43,
                 2: 38,
@@ -42,6 +35,13 @@ scores_from_num_of_lines = {1: 40,
                             3: 300,
                             4: 1200 }
 
+# GLOBALS VARS
+s_width = 800
+s_height = 700
+play_width = 300  # meaning 300 // 10 = 30 width per block
+play_height = 600  # meaning 600 // 20 = 20 height per blo ck
+block_size = 30
+
 # Скорость выражается в тиках на одну клетку (60 тиков в секунду +-2 тика)
 FPS = 60
 
@@ -50,6 +50,8 @@ FALL_SPEED = fall_speeds[START_LEVEL] # in ticks
 ARR = 2 # in ticks
 DAS = 10 # in ticks
 SOFT_DROP_SPEED = 2 # in ticks
+
+GAMEPAD_CONTROL = False
 
 top_left_x = (s_width - play_width) // 2
 top_left_y = s_height - play_height
@@ -163,6 +165,20 @@ shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 2
 
 
 # index 0 - 6 represent shape
+
+# Инициализация геймпадов
+pygame.joystick.init()
+
+# Проверка наличия подключенных геймпадов
+if pygame.joystick.get_count() == 0:
+    print("Нет подключенных геймпадов")
+    GAMEPAD_CONTROL = False
+else:
+    # Подключение к первому найденному геймпаду
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
+    print("Подключен геймпад:", joystick.get_name())
+    GAMEPAD_CONTROL = True
 
 
 class Piece(object):
@@ -366,6 +382,10 @@ def main():
     is_moving_allowed = True
     lines_cleared = 0
     current_level = 0
+
+    button_down_pressed = False
+    button_right_pressed = False
+    button_left_pressed = False
     
 
     while run:
@@ -421,41 +441,96 @@ def main():
 
 
         # Обработка произошедших за тик событий
-
-        # Список зажатых клавиш
-        pressed_keys = pygame.key.get_pressed()
-        # Список произошедших событий
         for event in pygame.event.get():
 
-            # Выход
+            # ВЫХОД
             if event.type == pygame.QUIT:
                 run = False
                 pygame.display.quit()
                 quit()
+            
+            # ГЕЙМПАД-ОСИ-КРЕСТОВИНА
+            if event.type == pygame.JOYAXISMOTION:
+                # Осевые движения для крестовины (D-pad)
+                if event.axis == 0:  # Горизонтальная ось крестовины
+                    # Крестовина влево - смещение влево
+                    if event.value < -0.5:
+                        current_piece.is_moving = True
+                        is_das_delay = True
+                        button_left_pressed = True
+                        current_piece.x -= 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.x += 1
+                    # Крестовина вправо - смещение вправо     
+                    elif event.value > 0.5:
+                        current_piece.is_moving = True
+                        is_das_delay = True
+                        button_right_pressed = True
+                        current_piece.x += 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.x -= 1
+                    else:
+                        button_left_pressed = False
+                        button_right_pressed = False
+                elif event.axis == 1:  # Вертикальная ось крестовины
+                    # Крестовина вверх - харддроп
+                    if event.value < -0.5:
+                        hard_drop = True
+                        while hard_drop:
+                            current_piece.y += 1
+                            if not (valid_space(current_piece, grid)) and current_piece.y > 0:
+                                current_piece.y -= 1
+                                change_piece = True
+                                hard_drop = False
+                    # Крестовина вниз
+                    elif event.value > 0.5:
+                        button_down_pressed = True
+                    else:
+                        button_down_pressed = False
 
-            # Нажатие клавиш
+             # ГЕЙМПАД-КНОПКИ-НАЖАТИЕ
+            if event.type == pygame.JOYBUTTONDOWN:
+                print(f"Кнопка {event.button} нажата")
+                # RESTART ON START
+                if event.button == 7:
+                    run = False
+                # Стрелка вверх - нажатие 
+                if event.button == 0:
+                    # Вращать фигуру
+                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                    if not valid_space(current_piece, grid):
+                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+
+            # КЛАВИАТУРА-НАЖАТИЕ
             if event.type == pygame.KEYDOWN:
-
                 # RESTART ON ESCAPE
                 if event.key == pygame.K_ESCAPE:
                     run = False
-
                 # Стрелка влево - нажатие
                 elif event.key == pygame.K_LEFT:
                     current_piece.is_moving = True
                     is_das_delay = True
+                    button_left_pressed = True
                     current_piece.x -= 1
                     if not valid_space(current_piece, grid):
                         current_piece.x += 1
-
                 # Стрелка вправо - нажатие 
                 elif event.key == pygame.K_RIGHT:
                     current_piece.is_moving = True
                     is_das_delay = True
+                    button_right_pressed = True
                     current_piece.x += 1
                     if not valid_space(current_piece, grid):
                         current_piece.x -= 1
-
+                # Стрелка вверх - нажатие 
+                if event.key == pygame.K_UP:
+                    # Вращать фигуру
+                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                    if not valid_space(current_piece, grid):
+                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                # Стрелка вниз - нажатие
+                elif event.key == pygame.K_DOWN:
+                    button_down_pressed = True
                 # Пробел - нажатие 
                 elif event.key == pygame.K_SPACE:
                     hard_drop = True
@@ -465,33 +540,26 @@ def main():
                             current_piece.y -= 1
                             change_piece = True
                             hard_drop = False
-                    
-                # Стрелка вверх - нажатие 
-                if event.key == pygame.K_UP:
-                    # Вращать фигуру
-                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
 
-            # Отпуск клавиш
+            # КЛАВИАТУРА-ОТПУСК
             if event.type == pygame.KEYUP:
-                
-                # Стрелка влево - отпуск
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT:  # Стрелка влево - отпуск
                     current_piece.is_moving = False
-                
-                # Стрелка вправо - отпуск
-                elif event.key == pygame.K_RIGHT:
+                    button_left_pressed = False
+                elif event.key == pygame.K_RIGHT:  # Стрелка вправо - отпуск
                     current_piece.is_moving = False
+                    button_right_pressed = False
+                elif event.key == pygame.K_DOWN:
+                    button_down_pressed = False
 
         # --------------------------!!!--------------------------
         # Движение по удерживанию стрелки вниз находится без условия движения, 
         # по скольку у нее отсутсвуют такие задержки, как ARR и DAS
         # --------------------------!!!--------------------------
 
-        # Ускоренное движение вниз при удержании
+        # Ускоренное движение вниз при удержании - софтдроп
         if soft_drop_allowed:
-            if(pressed_keys[pygame.K_DOWN]) :
+            if button_down_pressed:
                 current_piece.is_soft_dropping = True
                 current_piece.y += 1
                 soft_drop_allowed = False
@@ -502,18 +570,15 @@ def main():
 
         # Условие движения фигуры при удержании вправо/влево
         allow_move_while_pressed = current_piece.is_moving and not is_das_delay and is_moving_allowed and current_piece.y > 1        
-
         if allow_move_while_pressed:
-
             # Движение влево при удержании
-            if(pressed_keys[pygame.K_LEFT]):
+            if button_left_pressed:
                 current_piece.x -= 1
                 if not valid_space(current_piece, grid):
                     current_piece.x += 1
                 is_moving_allowed = False
-                
             # Движение вправо при удержании
-            if(pressed_keys[pygame.K_RIGHT]):
+            if button_right_pressed:
                 current_piece.x += 1
                 if not valid_space(current_piece, grid):
                     current_piece.x -= 1
@@ -573,7 +638,7 @@ def main_menu():
             if event.type == pygame.QUIT:
                 run = False
 
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN or event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYAXISMOTION:
                 main()
 
     pygame.quit()
