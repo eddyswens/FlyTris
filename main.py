@@ -501,16 +501,21 @@ def main():
 
              # ГЕЙМПАД-КНОПКИ-НАЖАТИЕ
             if event.type == pygame.JOYBUTTONDOWN:
-                print(f"Кнопка {event.button} нажата")
                 # RESTART ON START
                 if event.button == 7:
                     run = False
-                # Стрелка вверх - нажатие 
-                if event.button == 0:
-                    # Вращать фигуру
+                # Кнопка B - нажатие 
+                if event.button == 1:
+                    # Вращать фигуру по часовой
                     current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
                     if not valid_space(current_piece, grid):
                         current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                # Кнопка А - нажатие 
+                if event.button == 0:
+                    # Вращать фигуру против часовой
+                    current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                    if not valid_space(current_piece, grid):
+                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
 
             # КЛАВИАТУРА-НАЖАТИЕ
             if event.type == pygame.KEYDOWN:
@@ -533,17 +538,11 @@ def main():
                     current_piece.x += 1
                     if not valid_space(current_piece, grid):
                         current_piece.x -= 1
-                # Стрелка вверх - нажатие 
-                if event.key == pygame.K_UP:
-                    # Вращать фигуру
-                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
                 # Стрелка вниз - нажатие
                 elif event.key == pygame.K_DOWN:
                     button_down_pressed = True
-                # Пробел - нажатие 
-                elif event.key == pygame.K_SPACE:
+                # Стрелка вверх - нажатие 
+                elif event.key == pygame.K_UP:
                     hard_drop = True
                     while hard_drop:
                         current_piece.y += 1
@@ -551,6 +550,18 @@ def main():
                             current_piece.y -= 1
                             change_piece = True
                             hard_drop = False
+                # x - нажатие 
+                if event.key == pygame.K_x:
+                    # Вращать фигуру по часовой
+                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                    if not valid_space(current_piece, grid):
+                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                # z - нажатие 
+                if event.key == pygame.K_z:
+                    # Вращать фигуру против часовой
+                    current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                    if not valid_space(current_piece, grid):
+                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
 
             # КЛАВИАТУРА-ОТПУСК
             if event.type == pygame.KEYUP:
