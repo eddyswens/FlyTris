@@ -172,7 +172,8 @@ T = [['.....',
       '.....']]
 
 shapes = [S, Z, I, O, J, L, T]
-shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+# shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+shape_colors = [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
 
 
 # index 0 - 6 represent shape
@@ -265,7 +266,8 @@ def get_shape():
     
     if len(shapes) == 0:
         shapes = [S, Z, I, O, J, L, T]
-        shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+        # shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+        shape_colors = [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
 
     return shape_from_heap
 
@@ -335,6 +337,8 @@ def draw_stats(scr, lvl, surface):
 
 
 def draw_next_shape(shape, surface):
+    nextShapeMat = [[0 for j in range(5)] for i in range(5)]
+
     font = pygame.font.SysFont('comicsans', 30)
     label = font.render('Next Shape', 1, (255, 255, 255))
 
@@ -347,8 +351,10 @@ def draw_next_shape(shape, surface):
         for j, column in enumerate(row):
             if column == '0':
                 pygame.draw.rect(surface, shape.color, (sx + j * 30, sy + i * 30, 30, 30), 0)
-
+                nextShapeMat[i][j] = 1
+    # print(nextShapeMat)
     surface.blit(label, (sx + 10, sy - 30))
+    return nextShapeMat
 
 
 def draw_window(surface):
@@ -397,6 +403,9 @@ def main():
     button_down_pressed = False
     button_right_pressed = False
     button_left_pressed = False
+
+    last_time = 0
+    counter_20fps = 0
     
 
     while run:
@@ -421,7 +430,6 @@ def main():
                 soft_drop_allowed = True
             else:
                 soft_drop_timer += 1
-            
         
         # Таймер при активации DAS
         if is_das_delay:
@@ -587,6 +595,7 @@ def main():
                 soft_drop_allowed = False
                 if not valid_space(current_piece, grid):
                     current_piece.y -= 1
+                    change_piece = True
             else:
                 current_piece.is_soft_dropping = False
 
@@ -634,9 +643,36 @@ def main():
                 print(f"Level is {current_level}")
 
         draw_window(win)
-        draw_next_shape(next_piece, win)
+        nextShapeMat = draw_next_shape(next_piece, win)
         draw_stats(score, current_level, win)
         pygame.display.update()
+
+        # --------------------------!!!--------------------------
+        # INTERACTIVE MOMENTS
+        # --------------------------!!!--------------------------
+
+
+        if counter_20fps == 2:
+            # print(nextShapeMat)
+            # print(level_time - last_time)
+            # last_time = level_time
+            counter_20fps = 0
+            # binaryMat = color2binaryMat(grid)
+            flagMat = color2flagMat(grid)
+            scaledMat = scaleMat(flagMat)
+            # print(scaledMat)
+        else:
+            counter_20fps += 1
+       
+        #DEBUG#
+        # print(level_time - last_time)
+        # last_time = level_time
+        #DEBUG#
+
+        # --------------------------!!!--------------------------
+        # INTERACTIVE MOMENTS END
+        # --------------------------!!!--------------------------
+
 
         # Проверка на проигрыш
         if check_lost(locked_positions):
@@ -645,6 +681,58 @@ def main():
     draw_text_middle("You Lost", 40, (255, 255, 255), win)
     pygame.display.update()
     pygame.time.delay(500)
+
+
+def scaleMat(grid):
+    scaledMat = [[0 for j in range(20)] for i in range(40)]
+    for row in range(20):
+        for col in range(10):
+            val = grid[row][col]
+            scaledMat[2*row][2*col] = val
+            scaledMat[2*row+1][2*col] = val
+            scaledMat[2*row][2*col+1] = val
+            scaledMat[2*row+1][2*col+1] = val
+    # print(scaledMat)
+    return scaledMat
+
+    
+def color2flagMat(colorMat):
+    flagMat = colorMat
+    for row in range(20):
+        for col in range(10):
+            if colorMat[row][col] == (0, 255, 0):
+                flagMat[row][col] = 1
+            elif colorMat[row][col] == (255, 0, 0):
+                flagMat[row][col] = 2
+            elif colorMat[row][col] == (0, 255, 255):
+                flagMat[row][col] = 3
+            elif colorMat[row][col] == (255, 255, 0):
+                flagMat[row][col] = 4
+            elif colorMat[row][col] == (0, 0, 255):
+                flagMat[row][col] = 5
+            elif colorMat[row][col] == (255, 165, 0):
+                flagMat[row][col] = 6
+            elif colorMat[row][col] == (128, 0, 128):
+                flagMat[row][col] = 7
+            else:
+                flagMat[row][col] = 0
+    # print(flagMat)
+    return flagMat
+
+
+    # shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
+
+
+def color2binaryMat(colorMat):
+    binaryMat = colorMat
+    for row in range(20):
+        for col in range(10):
+            if colorMat[row][col] == (0, 0, 0):
+                binaryMat[row][col] = 0
+            else:
+                binaryMat[row][col] = 1
+    # print(binaryMat)
+    return binaryMat
 
 
 def main_menu():
