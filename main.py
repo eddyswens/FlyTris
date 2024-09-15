@@ -804,7 +804,7 @@ def main():
             next_shape_matrix = generate_next_shape_mat(next_shape_to_send)
             score_matrix = generate_score_mat(score_to_send)
 
-            packet_send(grid_to_send, next_shape_matrix,  current_color)
+            packet_send(grid_to_send, next_shape_matrix, score_matrix, current_color)
 
         # --------------------------!!!--------------------------
         # INTERACTIVE MOMENTS END
@@ -832,10 +832,11 @@ def main():
 def horizontal_concat(matrix1, matrix2):
     return [row1 + row2 for row1, row2 in zip(matrix1, matrix2)]
 
-def packet_send(main_matrix, next_shape_mat, color):
+def packet_send(main_matrix, next_shape_mat, score_mat, color):
     singleColorMat = color2flagMat(main_matrix, color)  # Выделяем из всей матрицы только фигуры нужного цвета
     scaledMainMat = scaleMat(singleColorMat)
     scaledNextShapeMat = scaleMat(next_shape_mat)  # ЗДЕСЬ ОТПРАВКА
+    scoreMat = score_mat
 
 def generate_next_shape_mat(mat):
     return [row[0:4] for row in mat[1:3]]
@@ -849,7 +850,6 @@ def generate_score_mat(score):
     score_mat = horizontal_concat(NUMS[fourth], NUMS[third])
     score_mat = horizontal_concat(score_mat, NUMS[second])
     score_mat = horizontal_concat(score_mat, NUMS[first])
-    print(score_mat)
 
 
 def scaleMat(mat):
