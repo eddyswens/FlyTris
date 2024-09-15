@@ -1,6 +1,7 @@
 from doctest import debug
 import pygame
 import random
+import time
 
 """
 10 x 20 square grid
@@ -10,25 +11,25 @@ represented in order by 0 - 6
 
 pygame.font.init()
 
-fall_speeds = { 0: 48, 
-                1: 43,
-                2: 38,
-                3: 33,
-                4: 28,
-                5: 23,
-                6: 18,
-                7: 13,
-                8: 8,
-                9: 6,
-                10: 5,
-                11: 5,
-                12: 5,
-                13: 4,
-                14: 4,
-                15: 4,
-                16: 3,
-                17: 3,
-                18: 3   }
+fall_speeds = { 0: 8, 
+                1: 7,
+                2: 6,
+                3: 5,
+                4: 4,
+                5: 4,
+                6: 3,
+                7: 2,
+                8: 1,
+                9: 1,
+                10: 1,
+                11: 1,
+                12: 1,
+                13: 1,
+                14: 1,
+                15: 1,
+                16: 1,
+                17: 1,
+                18: 1   }
 
 scores_from_num_of_lines = {1: 40,
                             2: 100,
@@ -43,60 +44,103 @@ play_height = 600  # meaning 600 // 20 = 20 height per blo ck
 block_size = 30
 
 # Скорость выражается в тиках на одну клетку (60 тиков в секунду +-2 тика)
-FPS = 60
+FPS = 20
 
 START_LEVEL = 0
 FALL_SPEED = fall_speeds[START_LEVEL] # in ticks
-ARR = 2 # in ticks
-DAS = 10 # in ticks
-SOFT_DROP_SPEED = 2 # in ticks
+ARR = 1 # in ticks
+DAS = 4 # in ticks
+SOFT_DROP_SPEED = 1 # in ticks
 
 GAMEPAD_CONTROL = False
 
 top_left_x = (s_width - play_width) // 2
 top_left_y = s_height - play_height
 
+# COLORS DICT
+colors = {
+    "red" : (255, 0, 0),
+    "blue" : (0, 0, 255)
+}
+
 # SHAPE FORMATS
 
 S = [['.....',
-      '.....',
       '..00.',
       '.00..',
+      '.....',
       '.....'],
 
      ['.....',
       '..0..',
       '..00.',
       '...0.',
+      '.....'],
+      
+     ['.....',
+      '.....',
+      '..00.',
+      '.00..',
+      '.....'],
+      
+     ['.....',
+      '.0...',
+      '.00..',
+      '..0..',
       '.....']]
 
 Z = [['.....',
-      '.....',
       '.00..',
       '..00.',
+      '.....',
       '.....'],
 
      ['.....',
       '...0.',
       '..00.',
       '..0..',
+      '.....'],
+
+     ['.....',
+      '.....',
+      '.00..',
+      '..00.',
+      '.....'],
+
+     ['.....',
+      '..0..',
+      '.00..',
+      '.0...',
       '.....']]
 
-I = [['..0..',
+I = [['.....',
+      '0000.',
+      '.....',
+      '.....',
+      '.....'],
+
+     ['..0..',
       '..0..',
       '..0..',
       '..0..',
       '.....'],
-    [ '.....',
+
+     ['.....',
       '.....',
       '0000.',
       '.....',
-      '.....'] ]
+      '.....'],
+
+     ['.0...',
+      '.0...',
+      '.0...',
+      '.0...',
+      '.....']]
 
 O = [['.....',
+      '.00..',
+      '.00..',
       '.....',
-      '.00..',
-      '.00..',
       '.....']]
 
 J = [['.....',
@@ -173,10 +217,70 @@ T = [['.....',
 
 shapes = [S, Z, I, O, J, L, T]
 # shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
-shape_colors = [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
-
-
+shape_colors = [(255, 0, 0), (255, 0, 0), (255, 0, 0), (255, 0, 0), (0, 0, 255), (0, 0, 255), (0, 0, 255)]
 # index 0 - 6 represent shape
+
+NUMS = [
+    [[1, 1, 1],
+     [1, 0, 1],
+     [1, 0, 1],
+     [1, 0, 1],
+     [1, 1, 1]],
+
+    [[0, 1, 0],
+     [1, 1, 0],
+     [0, 1, 0],
+     [0, 1, 0],
+     [1, 1, 1]],
+
+    [[1, 1, 1],
+     [0, 0, 1],
+     [1, 1, 1],
+     [1, 0, 0],
+     [1, 1, 1]],
+
+    [[1, 1, 1],
+     [0, 0, 1],
+     [1, 1, 1],
+     [0, 0, 1],
+     [1, 1, 1]],
+
+    [[1, 0, 1],
+     [1, 0, 1],
+     [1, 1, 1],
+     [0, 0, 1],
+     [0, 0, 1]],
+
+    [[1, 1, 1],
+     [1, 0, 0],
+     [1, 1, 1],
+     [0, 0, 1],
+     [1, 1, 1]],
+
+    [[1, 1, 1],
+     [1, 0, 0],
+     [1, 1, 1],
+     [1, 0, 1],
+     [1, 1, 1]],
+
+    [[1, 1, 1],
+     [0, 0, 1],
+     [0, 0, 1],
+     [0, 0, 1],
+     [0, 0, 1]],
+
+    [[1, 1, 1],
+     [1, 0, 1],
+     [1, 1, 1],
+     [1, 0, 1],
+     [1, 1, 1]],
+
+    [[1, 1, 1],
+     [1, 0, 1],
+     [1, 1, 1],
+     [0, 0, 1],
+     [1, 1, 1]]
+]
 
 # Инициализация геймпадов
 pygame.joystick.init()
@@ -203,7 +307,8 @@ class Piece(object):
         self.shape = shape
         self.color = shape_colors[shapes.index(shape)]
         self.rotation = 0  # number from 0-3
-        self.is_moving = False
+        self.is_moving_right = False
+        self.is_moving_left = False
         self.is_soft_dropping = False
 
 
@@ -216,6 +321,9 @@ def create_grid(locked_positions={}):
                 c = locked_positions[(j, i)]
                 grid[i][j] = c
     return grid
+
+def create_mat(row, cols):
+    return [[0 for x in range(cols)] for x in range(row)]
 
 
 def convert_shape_format(shape):
@@ -267,7 +375,7 @@ def get_shape():
     if len(shapes) == 0:
         shapes = [S, Z, I, O, J, L, T]
         # shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
-        shape_colors = [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
+        shape_colors = [(255, 0, 0), (255, 0, 0), (255, 0, 0), (255, 0, 0), (0, 0, 255), (0, 0, 255), (0, 0, 255)]
 
     return shape_from_heap
 
@@ -374,6 +482,9 @@ def draw_window(surface):
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 5)
     # pygame.display.update()
 
+def get_global_time():
+    return round(time.time() * 1000)
+
 
 def main():
     global grid
@@ -404,96 +515,106 @@ def main():
     button_right_pressed = False
     button_left_pressed = False
 
-    last_time = 0
-    counter_20fps = 0
-    
+    global_time_now = get_global_time()
+    last_update_global_time = global_time_now
+    last_send_global_time = global_time_now
+
+    next_color_to_send = "red"
+    grid_updated = False
+    grid_to_send = create_mat(20, 10)
+    next_shape_to_send = create_mat(5, 5)
+    score_to_send = 0
 
     while run:
-        # Создание сетки
-        grid = create_grid(locked_positions)
+        global_time_now = get_global_time()
+        if global_time_now - last_update_global_time >= 100:
+            last_update_global_time = get_global_time()
+
+            # Создание сетки
+            grid = create_grid(locked_positions)
 
 
-        # Таймеры и счетчики
-        # Получить количество мс между двумя тиками
-        level_time += clock.get_time()
-        if level_time > 1000:
-            level_time = 0
-            ticks = 1
+            # Таймеры и счетчики
+            # Получить количество мс между двумя тиками
+            level_time += clock.get_time()
+            if level_time > 1000:
+                level_time = 0
+                ticks = 1
 
-        clock.tick_busy_loop(FPS)
-        ticks += 1
+            clock.tick_busy_loop()
+            ticks += 1
 
-        # Таймер при активации Soft Drop
-        if not soft_drop_allowed:
-            if soft_drop_timer >= SOFT_DROP_SPEED:
-                soft_drop_timer = 0
-                soft_drop_allowed = True
-            else:
-                soft_drop_timer += 1
-        
-        # Таймер при активации DAS
-        if is_das_delay:
-            if das_timer >= DAS:
-                das_timer = 0
-                is_das_delay = False
-            else:
-                 das_timer += 1
-
-        # Таймер при активации ARR
-        if not is_moving_allowed:
-            if mov_timer >= ARR:
-                mov_timer = 0
-                is_moving_allowed = True
-            else:
-                mov_timer += 1
-
-        # Падение фигуры
-        if not current_piece.is_soft_dropping:
-            if fall_timer >= FALL_SPEED:
-                fall_timer = 0
-                current_piece.y += 1
-                if not (valid_space(current_piece, grid)) and current_piece.y > 0:
-                    current_piece.y -= 1
-                    change_piece = True
-            else:
-                fall_timer += 1
-
-
-        # Обработка произошедших за тик событий
-        for event in pygame.event.get():
-
-            # ВЫХОД
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.display.quit()
-                quit()
+            # Таймер при активации Soft Drop
+            if not soft_drop_allowed:
+                if soft_drop_timer >= SOFT_DROP_SPEED:
+                    soft_drop_timer = 0
+                    soft_drop_allowed = True
+                else:
+                    soft_drop_timer += 1
             
-            # ГЕЙМПАД-ОСИ-КРЕСТОВИНА
-            if event.type == pygame.JOYAXISMOTION:
-                # Осевые движения для крестовины (D-pad)
-                if event.axis == 0:  # Горизонтальная ось крестовины
+            # Таймер при активации DAS
+            if is_das_delay:
+                if das_timer >= DAS:
+                    das_timer = 0
+                    is_das_delay = False
+                else:
+                    das_timer += 1
+
+            # Таймер при активации ARR
+            if not is_moving_allowed:
+                if mov_timer >= ARR:
+                    mov_timer = 0
+                    is_moving_allowed = True
+                else:
+                    mov_timer += 1
+
+            # Падение фигуры
+            if not current_piece.is_soft_dropping:
+                if fall_timer >= FALL_SPEED:
+                    fall_timer = 0
+                    current_piece.y += 1
+                    if not (valid_space(current_piece, grid)) and current_piece.y > 0:
+                        current_piece.y -= 1
+                        change_piece = True
+                else:
+                    fall_timer += 1
+
+
+            # Обработка произошедших за тик событий
+            for event in pygame.event.get():
+
+                # ВЫХОД
+                if event.type == pygame.QUIT:
+                    run = False
+                    pygame.display.quit()
+                    quit()
+
+                # ГЕЙМПАД-КРЕСТОВИНА-НАЖАТИЕ
+                if event.type == pygame.JOYHATMOTION:
                     # Крестовина влево - смещение влево
-                    if event.value < -0.5:
-                        current_piece.is_moving = True
+                    if event.value[0] == -1:
+                        current_piece.is_moving_left = True
                         is_das_delay = True
                         button_left_pressed = True
                         current_piece.x -= 1
                         if not valid_space(current_piece, grid):
                             current_piece.x += 1
-                    # Крестовина вправо - смещение вправо     
-                    elif event.value > 0.5:
-                        current_piece.is_moving = True
+
+                    # Крестовина вправо - смещение вправо 
+                    if event.value[0] == 1:
+                        current_piece.is_moving_right = True
                         is_das_delay = True
                         button_right_pressed = True
                         current_piece.x += 1
                         if not valid_space(current_piece, grid):
                             current_piece.x -= 1
-                    else:
-                        button_left_pressed = False
-                        button_right_pressed = False
-                elif event.axis == 1:  # Вертикальная ось крестовины
+
+                    # Крестовина вниз - софтдроп
+                    if event.value[1] == -1:
+                        button_down_pressed = True
+
                     # Крестовина вверх - харддроп
-                    if event.value < -0.5:
+                    if event.value[1] == 1:
                         hard_drop = True
                         while hard_drop:
                             current_piece.y += 1
@@ -501,237 +622,270 @@ def main():
                                 current_piece.y -= 1
                                 change_piece = True
                                 hard_drop = False
-                    # Крестовина вниз
-                    elif event.value > 0.5:
+                    
+                    if event.value == (0, 0):
+                        button_down_pressed = False
+                        button_left_pressed = False
+                        button_right_pressed = False
+                        current_piece.is_moving_right = False
+                        current_piece.is_moving_left = False
+
+                # ГЕЙМПАД-КНОПКИ-НАЖАТИЕ
+                if event.type == pygame.JOYBUTTONDOWN:
+                    # RESTART ON START
+                    if event.button == 9:
+                        run = False
+                    # Кнопка B - нажатие 
+                    if event.button == 1:
+                        # Вращать фигуру по часовой
+                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                        if not valid_space(current_piece, grid):
+                            current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                    # Кнопка А - нажатие 
+                    if event.button == 0:
+                        # Вращать фигуру против часовой
+                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                        if not valid_space(current_piece, grid):
+                            current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+
+                # КЛАВИАТУРА-НАЖАТИЕ
+                if event.type == pygame.KEYDOWN:
+                    # RESTART ON ESCAPE
+                    if event.key == pygame.K_ESCAPE:
+                        run = False
+                    # Стрелка влево - нажатие
+                    elif event.key == pygame.K_LEFT:
+                        current_piece.is_moving_left = True
+                        is_das_delay = True
+                        button_left_pressed = True
+                        current_piece.x -= 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.x += 1
+                    # Стрелка вправо - нажатие 
+                    elif event.key == pygame.K_RIGHT:
+                        current_piece.is_moving_right = True
+                        is_das_delay = True
+                        button_right_pressed = True
+                        current_piece.x += 1
+                        if not valid_space(current_piece, grid):
+                            current_piece.x -= 1
+                    # Стрелка вниз - нажатие
+                    elif event.key == pygame.K_DOWN:
                         button_down_pressed = True
-                    else:
+                    # Стрелка вверх - нажатие 
+                    elif event.key == pygame.K_UP:
+                        hard_drop = True
+                        while hard_drop:
+                            current_piece.y += 1
+                            if not (valid_space(current_piece, grid)) and current_piece.y > 0:
+                                current_piece.y -= 1
+                                change_piece = True
+                                hard_drop = False
+                    # x - нажатие 
+                    if event.key == pygame.K_x:
+                        # Вращать фигуру по часовой
+                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                        if not valid_space(current_piece, grid):
+                            current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                    # z - нажатие 
+                    if event.key == pygame.K_z:
+                        # Вращать фигуру против часовой
+                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
+                        if not valid_space(current_piece, grid):
+                            current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+
+                # КЛАВИАТУРА-ОТПУСК
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_LEFT:  # Стрелка влево - отпуск
+                        current_piece.is_moving_left = False
+                        button_left_pressed = False
+                    elif event.key == pygame.K_RIGHT:  # Стрелка вправо - отпуск
+                        current_piece.is_moving_right = False
+                        button_right_pressed = False
+                    elif event.key == pygame.K_DOWN:
                         button_down_pressed = False
 
-             # ГЕЙМПАД-КНОПКИ-НАЖАТИЕ
-            if event.type == pygame.JOYBUTTONDOWN:
-                # RESTART ON START
-                if event.button == 7:
-                    run = False
-                # Кнопка B - нажатие 
-                if event.button == 1:
-                    # Вращать фигуру по часовой
-                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
-                # Кнопка А - нажатие 
-                if event.button == 0:
-                    # Вращать фигуру против часовой
-                    current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+            # --------------------------!!!--------------------------
+            # Движение по удерживанию стрелки вниз находится без условия движения, 
+            # по скольку у нее отсутсвуют такие задержки, как ARR и DAS
+            # --------------------------!!!--------------------------
 
-            # КЛАВИАТУРА-НАЖАТИЕ
-            if event.type == pygame.KEYDOWN:
-                # RESTART ON ESCAPE
-                if event.key == pygame.K_ESCAPE:
-                    run = False
-                # Стрелка влево - нажатие
-                elif event.key == pygame.K_LEFT:
-                    current_piece.is_moving = True
-                    is_das_delay = True
-                    button_left_pressed = True
+            # Ускоренное движение вниз при удержании - софтдроп
+            if soft_drop_allowed:
+                if button_down_pressed:
+                    current_piece.is_soft_dropping = True
+                    current_piece.y += 1
+                    soft_drop_allowed = False
+                    if not valid_space(current_piece, grid):
+                        current_piece.y -= 1
+                        change_piece = True
+                else:
+                    current_piece.is_soft_dropping = False
+
+            # Условие движения фигуры при удержании вправо/влево
+            allow_move_while_pressed = (current_piece.is_moving_left or current_piece.is_moving_right) and not is_das_delay and is_moving_allowed and current_piece.y > 1        
+            if allow_move_while_pressed:
+                # Движение влево при удержании
+                if button_left_pressed:
                     current_piece.x -= 1
                     if not valid_space(current_piece, grid):
                         current_piece.x += 1
-                # Стрелка вправо - нажатие 
-                elif event.key == pygame.K_RIGHT:
-                    current_piece.is_moving = True
-                    is_das_delay = True
-                    button_right_pressed = True
+                    is_moving_allowed = False
+                # Движение вправо при удержании
+                if button_right_pressed:
                     current_piece.x += 1
                     if not valid_space(current_piece, grid):
                         current_piece.x -= 1
-                # Стрелка вниз - нажатие
-                elif event.key == pygame.K_DOWN:
-                    button_down_pressed = True
-                # Стрелка вверх - нажатие 
-                elif event.key == pygame.K_UP:
-                    hard_drop = True
-                    while hard_drop:
-                        current_piece.y += 1
-                        if not (valid_space(current_piece, grid)) and current_piece.y > 0:
-                            current_piece.y -= 1
-                            change_piece = True
-                            hard_drop = False
-                # x - нажатие 
-                if event.key == pygame.K_x:
-                    # Вращать фигуру по часовой
-                    current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
-                # z - нажатие 
-                if event.key == pygame.K_z:
-                    # Вращать фигуру против часовой
-                    current_piece.rotation = current_piece.rotation - 1 % len(current_piece.shape)
-                    if not valid_space(current_piece, grid):
-                        current_piece.rotation = current_piece.rotation + 1 % len(current_piece.shape)
+                    is_moving_allowed = False
 
-            # КЛАВИАТУРА-ОТПУСК
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:  # Стрелка влево - отпуск
-                    current_piece.is_moving = False
-                    button_left_pressed = False
-                elif event.key == pygame.K_RIGHT:  # Стрелка вправо - отпуск
-                    current_piece.is_moving = False
-                    button_right_pressed = False
-                elif event.key == pygame.K_DOWN:
-                    button_down_pressed = False
+            # Конвертация фигуры в список занимаемых позиций для добавляения в сетку
+            shape_pos = convert_shape_format(current_piece)
 
+            # Добавить фигуру в общую сетку
+            for i in range(len(shape_pos)):
+                x, y = shape_pos[i]
+                if y > -1:
+                    grid[y][x] = current_piece.color
+
+            # Если фигура приземлилась - необходимо сменить фигуру 
+            if change_piece:
+                for pos in shape_pos:
+                    p = (pos[0], pos[1])
+                    locked_positions[p] = current_piece.color
+                current_piece = next_piece
+                next_piece = get_shape()
+                change_piece = False
+
+                # Проверка на необходимость очищения строки и добавление очков и уровня
+                current_lines_out = clear_rows(grid, locked_positions)
+                lines_cleared += current_lines_out
+                if current_lines_out:
+                    score += scores_from_num_of_lines[current_lines_out] * (current_level + 1)
+                    current_level = lines_cleared // 10
+                    print(f"Score is {score}")
+                    print(f"Level is {current_level}")
+
+            
+
+            draw_window(win)
+            nextShapeMat = draw_next_shape(next_piece, win)
+            draw_stats(score, current_level, win)
+            pygame.display.update()
+
+            # Проверка на проигрыш
+            if check_lost(locked_positions):
+                run = False
+
+            grid_updated = True 
+    
         # --------------------------!!!--------------------------
-        # Движение по удерживанию стрелки вниз находится без условия движения, 
-        # по скольку у нее отсутсвуют такие задержки, как ARR и DAS
+        # INTERACTIVE MOMENTS - 20 FPS
         # --------------------------!!!--------------------------
+        
+        if global_time_now - last_send_global_time >= 50:
+            # try:
+            #     print(1000/(global_time_now - last_send_global_time))  # DEBUG - CHECK FPS FOR SENDING
+            # except:
+            #     pass
+            last_send_global_time = get_global_time()
 
-        # Ускоренное движение вниз при удержании - софтдроп
-        if soft_drop_allowed:
-            if button_down_pressed:
-                current_piece.is_soft_dropping = True
-                current_piece.y += 1
-                soft_drop_allowed = False
-                if not valid_space(current_piece, grid):
-                    current_piece.y -= 1
-                    change_piece = True
+            if grid_updated:
+                grid_to_send = grid.copy()
+                next_shape_to_send = nextShapeMat.copy()
+                score_to_send = score
+                grid_updated = False
+
+            current_color = next_color_to_send
+            if current_color == "red":
+                next_color_to_send = "blue"
             else:
-                current_piece.is_soft_dropping = False
+                next_color_to_send = "red"
 
-        # Условие движения фигуры при удержании вправо/влево
-        allow_move_while_pressed = current_piece.is_moving and not is_das_delay and is_moving_allowed and current_piece.y > 1        
-        if allow_move_while_pressed:
-            # Движение влево при удержании
-            if button_left_pressed:
-                current_piece.x -= 1
-                if not valid_space(current_piece, grid):
-                    current_piece.x += 1
-                is_moving_allowed = False
-            # Движение вправо при удержании
-            if button_right_pressed:
-                current_piece.x += 1
-                if not valid_space(current_piece, grid):
-                    current_piece.x -= 1
-                is_moving_allowed = False
+            next_shape_matrix = generate_next_shape_mat(next_shape_to_send)
+            score_matrix = generate_score_mat(score_to_send)
 
-        # Конвертация фигуры в список занимаемых позиций для добавляения в сетку
-        shape_pos = convert_shape_format(current_piece)
-
-        # Добавить фигуру в общую сетку
-        for i in range(len(shape_pos)):
-            x, y = shape_pos[i]
-            if y > -1:
-                grid[y][x] = current_piece.color
-
-        # Если фигура приземлилась - необходимо сменить фигуру 
-        if change_piece:
-            for pos in shape_pos:
-                p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.color
-            current_piece = next_piece
-            next_piece = get_shape()
-            change_piece = False
-
-            # Проверка на необходимость очищения строки и добавление очков и уровня
-            current_lines_out = clear_rows(grid, locked_positions)
-            lines_cleared += current_lines_out
-            if current_lines_out:
-                score += scores_from_num_of_lines[current_lines_out] * (current_level + 1)
-                current_level = lines_cleared // 10
-                print(f"Score is {score}")
-                print(f"Level is {current_level}")
-
-        draw_window(win)
-        nextShapeMat = draw_next_shape(next_piece, win)
-        draw_stats(score, current_level, win)
-        pygame.display.update()
-
-        # --------------------------!!!--------------------------
-        # INTERACTIVE MOMENTS
-        # --------------------------!!!--------------------------
-
-
-        if counter_20fps == 2:
-            # print(nextShapeMat)
-            # print(level_time - last_time)
-            # last_time = level_time
-            counter_20fps = 0
-            # binaryMat = color2binaryMat(grid)
-            flagMat = color2flagMat(grid)
-            scaledMat = scaleMat(flagMat)
-            # print(scaledMat)
-        else:
-            counter_20fps += 1
-       
-        #DEBUG#
-        # print(level_time - last_time)
-        # last_time = level_time
-        #DEBUG#
+            packet_send(grid_to_send, next_shape_matrix,  current_color)
 
         # --------------------------!!!--------------------------
         # INTERACTIVE MOMENTS END
         # --------------------------!!!--------------------------
 
 
-        # Проверка на проигрыш
-        if check_lost(locked_positions):
-            run = False
+        # --------------------------!!!--------------------------
+        # DEBUG
+        # --------------------------!!!--------------------------
+
+        # try:
+        #     print(1000/(level_time - last_time))  # DEBUG - CHECK FPS FOR UPDATING GAME
+        # except:
+        #     pass
+        # last_time = level_time
+
+        # --------------------------!!!--------------------------
+        # DEBUG END
+        # --------------------------!!!--------------------------
 
     draw_text_middle("You Lost", 40, (255, 255, 255), win)
     pygame.display.update()
     pygame.time.delay(500)
 
+def horizontal_concat(matrix1, matrix2):
+    return [row1 + row2 for row1, row2 in zip(matrix1, matrix2)]
 
-def scaleMat(grid):
-    scaledMat = [[0 for j in range(20)] for i in range(40)]
-    for row in range(20):
-        for col in range(10):
-            val = grid[row][col]
+def packet_send(main_matrix, next_shape_mat, color):
+    singleColorMat = color2flagMat(main_matrix, color)  # Выделяем из всей матрицы только фигуры нужного цвета
+    scaledMainMat = scaleMat(singleColorMat)
+    scaledNextShapeMat = scaleMat(next_shape_mat)  # ЗДЕСЬ ОТПРАВКА
+
+def generate_next_shape_mat(mat):
+    return [row[0:4] for row in mat[1:3]]
+
+def generate_score_mat(score):
+    score_mat = create_mat(5, 3)
+    first = score % 10
+    second = (score//10) % 10
+    third = (score//100) % 10
+    fourth = score//1000
+    score_mat = horizontal_concat(NUMS[fourth], NUMS[third])
+    score_mat = horizontal_concat(score_mat, NUMS[second])
+    score_mat = horizontal_concat(score_mat, NUMS[first])
+    print(score_mat)
+
+
+def scaleMat(mat):
+    rows = len(mat)
+    cols = len(mat[0])
+    scaledMat = create_mat(rows*2, cols*2)
+    for row in range(rows):
+        for col in range(cols):
+            val = mat[row][col]
             scaledMat[2*row][2*col] = val
             scaledMat[2*row+1][2*col] = val
             scaledMat[2*row][2*col+1] = val
             scaledMat[2*row+1][2*col+1] = val
-    # print(scaledMat)
     return scaledMat
 
     
-def color2flagMat(colorMat):
-    flagMat = colorMat
+def color2flagMat(colorMat, color):
+    flagMat = create_mat(20, 10)
+    color_to_find = colors[color]
     for row in range(20):
         for col in range(10):
-            if colorMat[row][col] == (0, 255, 0):
+            if colorMat[row][col] == color_to_find:
                 flagMat[row][col] = 1
-            elif colorMat[row][col] == (255, 0, 0):
-                flagMat[row][col] = 2
-            elif colorMat[row][col] == (0, 255, 255):
-                flagMat[row][col] = 3
-            elif colorMat[row][col] == (255, 255, 0):
-                flagMat[row][col] = 4
-            elif colorMat[row][col] == (0, 0, 255):
-                flagMat[row][col] = 5
-            elif colorMat[row][col] == (255, 165, 0):
-                flagMat[row][col] = 6
-            elif colorMat[row][col] == (128, 0, 128):
-                flagMat[row][col] = 7
             else:
                 flagMat[row][col] = 0
-    # print(flagMat)
     return flagMat
 
 
-    # shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (0, 0, 255), (255, 165, 0), (128, 0, 128)]
-
-
 def color2binaryMat(colorMat):
-    binaryMat = colorMat
+    binaryMat = create_mat(20, 10)
     for row in range(20):
         for col in range(10):
             if colorMat[row][col] == (0, 0, 0):
                 binaryMat[row][col] = 0
             else:
                 binaryMat[row][col] = 1
-    # print(binaryMat)
     return binaryMat
 
 
